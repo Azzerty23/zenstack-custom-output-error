@@ -1,3 +1,64 @@
+# Bug Report: `zenstack` only works at runtime with the default output location
+
+At runtime, `zenstack` only works if the artifacts are generated into the default location (`node_modules/.zenstack`).
+
+### Steps to Reproduce
+
+Prerequisites: `cp .env.example .env && npx create-db`
+
+1. `npx zenstack generate --output lib/generated/zenstack`
+2. `npx prisma db seed`
+
+👉 This fails at runtime.
+
+### Note
+
+If I explicitly generate into the default location, it works as expected:
+
+1. `npx zenstack generate --output node_modules/.zenstack`
+2. `npx prisma db seed`
+
+### Logs of the failure
+
+```sh
+Loaded Prisma config from prisma.config.ts.
+
+Prisma config detected, skipping environment variable loading.
+Running seed command `tsx ./prisma/seed.ts` ...
+/Users/augustin/Documents/Dev/Test/prisma-examples/generator-prisma-client/nextjs-starter-webpack/node_modules/.pnpm/@zenstackhq+runtime@2.18.1_@prisma+client@6.14.0_zod@3.25.71/node_modules/@zenstackhq/runtime/enhance.js:8
+        throw new Error('Generated "enhance" function not found. Please run `zenstack generate` first.');
+              ^
+
+Error: Generated "enhance" function not found. Please run `zenstack generate` first.
+    at exports.enhance (/Users/augustin/Documents/Dev/Test/prisma-examples/generator-prisma-client/nextjs-starter-webpack/node_modules/.pnpm/@zenstackhq+runtime@2.18.1_@prisma+client@6.14.0_zod@3.25.71/node_modules/@zenstackhq/runtime/enhance.js:8:15)
+    at <anonymous> (/Users/augustin/Documents/Dev/Test/prisma-examples/generator-prisma-client/nextjs-starter-webpack/lib/db.ts:18:31)
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:547:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:116:5)
+
+Node.js v22.13.1
+
+An error occurred while running the seed command:
+Error: Command failed with exit code 1: tsx ./prisma/seed.ts
+```
+
+### Content of node_modules/@zenstackhq/runtime/enhance.js
+
+```js
+'use strict';
+Object.defineProperty(exports, '__esModule', { value: true });
+
+try {
+    exports.enhance = require('.zenstack/enhance').enhance;
+} catch {
+    exports.enhance = function () {
+        throw new Error('Generated "enhance" function not found. Please run `zenstack generate` first.');
+    };
+}
+```
+
+-------------------
+
 # Prisma Postgres Example: Next.js 15 Starter (Webpack, Node.js, ESM)
 
 This project showcases how to use the Prisma ORM with Prisma Postgres in an ESM Next.js application.
@@ -22,7 +83,7 @@ To successfully run the project, you will need the following:
   - `postcss.config.js` -> `postcss.config.mjs`
 - Prisma Client with the `prisma-client` generator
   See the [Prisma schema file](./prisma/schema.prisma) for details.
-  
+
   ```prisma
   generator client {
     provider = "prisma-client"

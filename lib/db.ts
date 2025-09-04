@@ -1,4 +1,5 @@
 import { PrismaPg } from "@prisma/adapter-pg";
+import { enhance } from "@zenstackhq/runtime";
 import { env } from "./env/server";
 import { PrismaClient } from "./generated/prisma/client";
 
@@ -13,5 +14,5 @@ export function getDb({ connectionString }: GetDbParams) {
 	return prisma;
 }
 
-const prisma = getDb({ connectionString: env.DIRECT_URL });
-export default prisma;
+export const prisma = getDb({ connectionString: env.DIRECT_URL });
+export const enhancedPrisma = enhance(prisma, { user: undefined });
