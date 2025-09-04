@@ -1,5 +1,5 @@
 import { PrismaPg } from "@prisma/adapter-pg";
-import { enhance } from "@zenstackhq/runtime";
+import { enhance } from "./generated/zenstack/enhance";
 import { env } from "./env/server";
 import { PrismaClient } from "./generated/prisma/client";
 
