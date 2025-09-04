@@ -1,53 +1,47 @@
-# Bug Report: `zenstack` only works at runtime with the default output location
+# Bug Report: `zenstack` only works at runtime with the default output location [RESOLVED]
 
 At runtime, `zenstack` only works if the artifacts are generated into the default location (`node_modules/.zenstack`).
 
-### Steps to Reproduce
+### Issue Description
+
+When using a custom output location with `zenstack generate --output`, the runtime would fail because `@zenstackhq/runtime` was hardcoded to look for the enhance function in `node_modules/.zenstack`.
+
+### Solution
+
+Import the `enhance` function directly from the generated output path instead of using `@zenstackhq/runtime`:
+
+```typescript
+// ❌ Before - fails with custom output location
+import { enhance } from "@zenstackhq/runtime";
+
+// ✅ After - works with custom output location
+import { enhance } from "./generated/zenstack/enhance";
+```
+
+### Steps to Use Custom Output Location
 
 Prerequisites: `cp .env.example .env && npx create-db`
 
-1. `npx zenstack generate --output lib/generated/zenstack`
-2. `npx prisma db seed`
+1. Generate ZenStack artifacts to custom location:
+   ```bash
+   npx zenstack generate --output lib/generated/zenstack
+   ```
 
-👉 This fails at runtime.
+2. Import enhance from the generated path in your code:
+   ```typescript
+   import { enhance } from "./generated/zenstack/enhance";
+   ```
 
-### Note
+3. Run your application:
+   ```bash
+   npx prisma db seed
+   ```
 
-If I explicitly generate into the default location, it works as expected:
+### Root Cause
 
-1. `npx zenstack generate --output node_modules/.zenstack`
-2. `npx prisma db seed`
-
-### Logs of the failure
-
-```sh
-Loaded Prisma config from prisma.config.ts.
-
-Prisma config detected, skipping environment variable loading.
-Running seed command `tsx ./prisma/seed.ts` ...
-/Users/augustin/Documents/Dev/Test/prisma-examples/generator-prisma-client/nextjs-starter-webpack/node_modules/.pnpm/@zenstackhq+runtime@2.18.1_@prisma+client@6.14.0_zod@3.25.71/node_modules/@zenstackhq/runtime/enhance.js:8
-        throw new Error('Generated "enhance" function not found. Please run `zenstack generate` first.');
-              ^
-
-Error: Generated "enhance" function not found. Please run `zenstack generate` first.
-    at exports.enhance (/Users/augustin/Documents/Dev/Test/prisma-examples/generator-prisma-client/nextjs-starter-webpack/node_modules/.pnpm/@zenstackhq+runtime@2.18.1_@prisma+client@6.14.0_zod@3.25.71/node_modules/@zenstackhq/runtime/enhance.js:8:15)
-    at <anonymous> (/Users/augustin/Documents/Dev/Test/prisma-examples/generator-prisma-client/nextjs-starter-webpack/lib/db.ts:18:31)
-    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
-    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:547:26)
-    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:116:5)
-
-Node.js v22.13.1
-
-An error occurred while running the seed command:
-Error: Command failed with exit code 1: tsx ./prisma/seed.ts
-```
-
-### Content of node_modules/@zenstackhq/runtime/enhance.js
+The `@zenstackhq/runtime/enhance.js` module is hardcoded to look for the enhance function at `.zenstack/enhance`:
 
 ```js
-'use strict';
-Object.defineProperty(exports, '__esModule', { value: true });
-
 try {
     exports.enhance = require('.zenstack/enhance').enhance;
 } catch {
@@ -56,6 +50,8 @@ try {
     };
 }
 ```
+
+By importing directly from the generated output path, we bypass this limitation and can use any output location.
 
 -------------------
 
